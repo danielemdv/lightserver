@@ -21,6 +21,8 @@ var multer = require('multer'); // v1.0.5
 var upload = multer(); // for parsing multipart/form-data
 var app = express(); //create the app
 
+var globalOutput = 50;
+
 app.use(bodyParser.json()); // for parsing 'application/json'
 app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 
@@ -51,7 +53,9 @@ app.post('/clientupdate',upload.array(), function(req, res){
 	
 	console.log("Output instruction: " + output); //Print the output that will be sent to the arduino to the console.
 	
+	globalOutput = output;
 	res.send(output); //Send the JSON string with the lightIntensity back to the arduino
+	//res.send(output); //original, pal debugging
 	
 	/*Notas
 	 * JSON.stringify(JSONOBJECT) nos devuelve el string del json.
@@ -73,22 +77,30 @@ function handleInput(objIn){
 		// light less than 400 and no motion
 		if((l < 400) && (m == 0))
 		{
-			out = 3; //30% intensity
+			out = 30; //30% intensity
 		}
 		// light less than 400 and motion!
 		else if((l < 400) && (m == 1))
 		{
-			out = 10; //100% intensity
+			out = 100; //100% intensity
 		}
 		else//This means ambient light is >=400 so we'll turn our street light off
 		{
 			out = 0; //off
 		}
 		
-		var jsonRes = '{"lightIntensity":' + out + '}'; //No optional overrides. just conventional response.
-		return jsonRes;
+		//COMMENTED FOR TESTING
+		//var jsonRes = '{"lightIntensity":' + out + '}'; //No optional overrides. just conventional response.
+		//return jsonRes;
+		return out + "";
 	
 }
+
+
+app.get('/getupdatevalue', function(req, res){
+		res.send(globalOutput);
+})
+
 
 
 //Aqui tambien, le decimos que es lo que va a ejecutar cuando hace listen...
