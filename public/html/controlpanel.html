@@ -3838,8 +3838,9 @@
 								<h2>Override Settings</h2>
 								<p>
 									Choose to set an override value for the smart street light or to reset it.<br><br>
-									'Override on' must be 1 to override.<br>
-									The 'Override Light Value' must be a value from 0 to 100
+									'Override on' must be 1 to override, 0 to turn off.<br>
+									The 'Override Light Value' must be a value from 0 to 100.<br><br>
+									The 'Light Threshold' must be a value from 0 to 1023.
 								</p>
 								<form method="post">
 									Override on:<br>
@@ -3847,6 +3848,9 @@
  									<br><br>
   									Override light value:<br>
   									<input type="number" name="overrideValue" value="100">
+ 									<br><br>
+ 									Light Threshold:<br>
+  									<input type="number" name="threshold" value="400">
  									<br><br>
  									<input type="submit" value="Submit">
 								</form> 

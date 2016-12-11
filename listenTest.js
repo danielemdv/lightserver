@@ -179,18 +179,20 @@ app.post('/updateoverride',upload.array(), function(req, res){
 	
 	var over = req.body.override;
 	var overVal = req.body.overrideValue;
+	var thresh = req.body.threshold;
 	
 	//Check if values are in the appropriate ranges
-	if((over>=0 && over <= 1) && (overrideValue >= 0 && overrideValue <= 100)){
-		console.log("Received new override, value: " + over + ", " + overVal);
+	if((over>=0 && over <= 1) && (overVal >= 0 && overVal <= 100) && (thresh >= 0 && thresh <= 1023)){
+		console.log("Received new override, value, threshold: " + over + ", " + overVal + ", " + thresh);
 	
 		override = over;
 		overrideValue = overVal;
+		lightThreshold = thresh;
 	
 		res.send("Override settings now set to: " + over + ", " + overVal);	
 		
 	}else{
-		res.send("ERROR: Override setting values out of range");
+		res.send("ERROR: Override or threshold setting values out of range");
 	}
 	
 	
