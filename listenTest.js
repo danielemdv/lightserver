@@ -8,7 +8,7 @@
  * can give it instructions to turn on with a certain light intensity or completely off.
  * 
  * The precedence of these measurments should be light > motion, since even if there is human motion detected,
- * the light should omly turn on if there isn't daylight.
+ * the light should only turn on if there isn't daylight.
  *   
  * */
 
@@ -18,10 +18,19 @@
 var express = require('express') //Express is the nodejs framework we will use to create a RESTful API (We will use only GET and POST)
 var bodyParser = require('body-parser'); //This is a module that will be used to parse JSON text to JSON objects.
 var multer = require('multer'); // v1.0.5
+var fs = require('fs');
 var upload = multer(); // for parsing multipart/form-data
 var app = express(); //create the app
 
+
+
+
+//Variables
 var globalOutput = 50;
+var lightThreshold = 400;
+//Variables for light output level
+
+
 
 app.use(bodyParser.json()); // for parsing 'application/json'
 app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
@@ -46,14 +55,21 @@ app.post('/clientupdate',upload.array(), function(req, res){
 	
 	//If a json string was passed it becomes automatically parsed as a json object in req.body this means we can get the key values from req.body.keyName
 	
-	console.log("clientupdate POST called"); //Just a little heads up to know what's goin' on.
+	//console.log("clientupdate POST called"); //Just a little heads up to know what's goin' on.
 	
 	//Call function to handle the data recieved from the arduino and what to send back. (all in JSON format)
 	var output = handleInput(req.body); //Pass in the JSON object of the arduino's message.
 	
 	console.log("Output instruction: " + output); //Print the output that will be sent to the arduino to the console.
 	
-	globalOutput = output;
+	//globalOutput = output;
+	
+	
+	//Log the data to the CSV
+		//Tendre que pasarle (light, motion, output value, timestamp)
+	logData(req.body, output);
+
+	
 	res.send(output); //Send the JSON string with the lightIntensity back to the arduino
 	//res.send(output); //original, pal debugging
 	
@@ -71,21 +87,28 @@ function handleInput(objIn){
 		var l = objIn.light;
 		var m = objIn.motion;
 		
+		//Logging received values
+		
+		console.log("Light sensor in: " + l);
+		console.log("Motion sensor in: " + m);
+		
+		
 		//Variable for how the light will be set.
 		var out = 0; //Will take values from 0 to 10 (off to 100% intensity)
 		
 		// light less than 400 and no motion
-		if((l < 400) && (m == 0))
+		if((l < lightThreshold) && (m == 0))
 		{
-			out = 30; //30% intensity
+			out = 20; //20% intensity
 		}
 		// light less than 400 and motion!
-		else if((l < 400) && (m == 1))
+		else if((l < lightThreshold) && (m == 1))
 		{
 			out = 100; //100% intensity
 		}
 		else//This means ambient light is >=400 so we'll turn our street light off
 		{
+			//Aqui debe ser 0
 			out = 0; //off
 		}
 		
@@ -95,6 +118,39 @@ function handleInput(objIn){
 		return out + "";
 	
 }
+
+function logData(objIn, out){
+//Logs light, motion, output, timestamp
+
+	var l = objIn.light;
+	var m = objIn.motion;
+	
+	var date = new Date().getTime();
+	
+	fs.appendFile("./public/data/data.csv", l + "," + m + "," + out + "," + date + "\n", function(err) {
+    	if(err) {
+        	return console.log(err);
+    	}
+
+    		console.log("log to csv succesful");
+		}); 
+	
+	
+}
+
+app.post('/updatethreshold',upload.array(), function(req, res){
+	
+	//If a json string was passed it becomes automatically parsed as a json object in req.body this means we can get the key values from req.body.keyName
+	
+	console.log("updatethreshold POST called"); //Just a little heads up to know what's goin' on.
+	
+	var input = req.body.threshold;
+	console.log("Received: " + input);
+	
+	
+	res.send("New light threshold set to: " + input);
+	
+})
 
 
 app.get('/getupdatevalue', function(req, res){
@@ -109,5 +165,5 @@ var server = app.listen(8081, function(){
 	var port = server.address().port
 	
 	
-	console.log("Example app listening at http://",host,":", port)
+	console.log("Example app listening at http://" + host + ":" + port)
 })
