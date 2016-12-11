@@ -19,6 +19,7 @@ var express = require('express') //Express is the nodejs framework we will use t
 var bodyParser = require('body-parser'); //This is a module that will be used to parse JSON text to JSON objects.
 var multer = require('multer'); // v1.0.5
 var fs = require('fs');
+var path = require("path");
 var upload = multer(); // for parsing multipart/form-data
 var app = express(); //create the app
 
@@ -28,6 +29,8 @@ var app = express(); //create the app
 //Variables
 var globalOutput = 50;
 var lightThreshold = 400;
+var override = 0;
+var overrideValue = 100;
 //Variables for light output level
 
 
@@ -41,13 +44,13 @@ app.use(express.static('public'));
 
 //Le estamos pasando una funcion que estamos construyendo on the fly al framework. Lo que pongamos en res.send(...) se le manda al cliente que nos accedio con el url simple (e.g. localhost:8081/)
 app.get('/', function(req, res){
-		res.send("Hello World! I'm a server designed to run an intelligent lighting system!");
+	res.send("Hello World! I'm a server designed to run an intelligent lighting system!");
 })
 
 
 //Regresar que el servidor esta funcionado si se accede a el url '/status'
 app.get('/status', function(req, res){
-		res.send("Server is running aOK");
+	res.send("Server is running OK");
 })
 
 //Recieve a JSON object at the url /clientupdate This will be the arduino's point of communication with the server.
@@ -96,20 +99,27 @@ function handleInput(objIn){
 		//Variable for how the light will be set.
 		var out = 0; //Will take values from 0 to 10 (off to 100% intensity)
 		
-		// light less than 400 and no motion
-		if((l < lightThreshold) && (m == 0))
-		{
-			out = 20; //20% intensity
-		}
-		// light less than 400 and motion!
-		else if((l < lightThreshold) && (m == 1))
-		{
-			out = 100; //100% intensity
-		}
-		else//This means ambient light is >=400 so we'll turn our street light off
-		{
-			//Aqui debe ser 0
-			out = 0; //off
+		
+		//Check to see if override is turned on.
+		if(override == 0){
+			// light less than threshold and no motion
+			if((l < lightThreshold) && (m == 0))
+			{
+				out = 20; //20% intensity
+			}
+			// light less than threshold and motion!
+			else if((l < lightThreshold) && (m == 1))
+			{
+				out = 100; //100% intensity
+			}
+			else//This means ambient light is >=threshold so we'll turn our street light off
+			{
+				//Aqui debe ser 0
+				out = 0; //off
+			}
+		
+		}else if(override == 1){
+			out = overrideValue;
 		}
 		
 		//COMMENTED FOR TESTING
@@ -145,10 +155,45 @@ app.post('/updatethreshold',upload.array(), function(req, res){
 	console.log("updatethreshold POST called"); //Just a little heads up to know what's goin' on.
 	
 	var input = req.body.threshold;
-	console.log("Received: " + input);
+	console.log("Received new threshold: " + input);
 	
+	
+	lightThreshold = input;
 	
 	res.send("New light threshold set to: " + input);
+	
+})
+
+
+
+app.get('/updateoverride',upload.array(), function(req, res){
+	res.sendFile(path.join(__dirname+'/public/html/controlpanel.html'));
+})
+
+app.post('/updateoverride',upload.array(), function(req, res){
+	
+	//Recieves JSON {"override":0,"overrideValue":80}
+	//override 0 for false 1 for true
+	//overrideValue int in [0,100] for percentage of light intensity.
+	
+	
+	var over = req.body.override;
+	var overVal = req.body.overrideValue;
+	
+	//Check if values are in the appropriate ranges
+	if((over>=0 && over <= 1) && (overrideValue >= 0 && overrideValue <= 100)){
+		console.log("Received new override, value: " + over + ", " + overVal);
+	
+		override = over;
+		overrideValue = overVal;
+	
+		res.send("Override settings now set to: " + over + ", " + overVal);	
+		
+	}else{
+		res.send("ERROR: Override setting values out of range");
+	}
+	
+	
 	
 })
 
