@@ -137,7 +137,7 @@ function logData(objIn, out){
 	
 	var date = new Date().getTime();
 	
-	fs.appendFile("./public/data/data.csv", l + "," + m + "," + out + "," + date + "\n", function(err) {
+	fs.appendFile("./public/data/nuevo.csv", l + "," + m + "," + out + "," + date + "\n", function(err) {
     	if(err) {
         	return console.log(err);
     	}
@@ -189,7 +189,7 @@ app.post('/updateoverride',upload.array(), function(req, res){
 		overrideValue = overVal;
 		lightThreshold = thresh;
 	
-		res.send("Override settings now set to: " + over + ", " + overVal);	
+		res.send("Override settings now set to (override, overrideValue, threshold): " + over + ", " + overVal + ", " + thresh);	
 		
 	}else{
 		res.send("ERROR: Override or threshold setting values out of range");
